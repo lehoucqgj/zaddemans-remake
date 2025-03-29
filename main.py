@@ -28,31 +28,34 @@ button_pins = {pin: machine.Pin(pin, machine.Pin.IN, machine.Pin.PULL_DOWN) for 
 
 button_reset = Pin(10, Pin.IN, Pin.PULL_DOWN)
 
-total = 0.0
 # Interrupt handler
 def button_irq(pin):
-    global total
     #utime.sleep_ms(50)  # Debounce delay
     for pin_num, price in buttons.items():
-        if button_pins[pin_num].value() == 1:  # Check which button is pressed
-            total += price
-            print_total()
-            print(total)
-            break  # Exit loop after detecting the first valid press
+        if button_pins[pin_num].value():  # Check which button is pressed
+            print_total(update_total(price))
+            break
 
 def button_reset_irq(pin):
     if pin == button_reset and button_reset.value() == 1:
         reset()
+total = 0.0
+def update_total(price):
+    global total
+    total += price
+    return total
 
-# Attach the same interrupt to all buttons
-for pin_num, pin_obj in button_pins.items():
-    pin_obj.irq(trigger=machine.Pin.IRQ_RISING, handler=button_irq)
+def button_activation():
+    for pin_num, pin_obj in button_pins.items():
+        pin_obj.irq(trigger=machine.Pin.IRQ_RISING, handler=button_irq)
 
-button_reset.irq(trigger=Pin.IRQ_RISING, handler=button_reset_irq)
+    button_reset.irq(trigger=Pin.IRQ_RISING, handler=button_reset_irq)
+def button_deactivation():
+    for pin_num, pin_obj in button_pins.items():
+        pin_obj.irq(handler=None)
 
 
-
-def print_total():
+def print_total(toprint):
     global total
     start_time = utime.ticks_ms() #Time recording start
 
@@ -60,19 +63,18 @@ def print_total():
     for i in range(9, 16):
         lcd.move_to(i, 0)
         lcd.putchar(' ')
-    formatted_total = "{:.2f}".format(total)
     
-    if total < 10:
+    if toprint < 10:
         position = 12
-    elif total < 100:
+    elif toprint < 100:
         position = 11
-    elif total < 1000:
+    elif toprint < 1000:
         position = 10
     else:
         position = 9
     
     lcd.move_to(position, 0)
-    lcd.putstr(formatted_total)
+    lcd.putstr("{:.2f}".format(toprint))
 
     end_time = utime.ticks_ms() #Time recording end
     execution_time = utime.ticks_diff(end_time, start_time)  # Calculate the difference
@@ -80,10 +82,7 @@ def print_total():
 
 
 def welcome():
-    # buttons op non-actief zetten
-    for pin_num, pin_obj in button_pins.items():
-        pin_obj.irq(handler=None)
-
+    button_deactivation()
     # begroeting
     lcd.clear()
     lcd.putstr("Jow zadde")
@@ -95,13 +94,14 @@ def welcome():
 def UI():
     lcd.move_to(2, 0)
     lcd.putstr("Totaal: ")
-    print_total()
+    print_total(0.0)
     lcd.move_to(0, 1)
     lcd.putstr("Piews")
     lcd.move_to(6, 1)
     lcd.putstr("Gust")
     lcd.move_to(11, 1)
     lcd.putstr("Coca")
+    button_activation()
 
 def reset():
     lcd.clear()
