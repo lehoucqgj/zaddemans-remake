@@ -39,6 +39,7 @@ def button_irq(pin):
 def button_reset_irq(pin):
     if pin == button_reset and button_reset.value() == 1:
         reset()
+
 total = 0.0
 def update_total(price):
     global total
@@ -104,6 +105,8 @@ def UI():
     button_activation()
 
 def reset():
+    global total
+    total = 0.0
     lcd.clear()
     UI()
 
