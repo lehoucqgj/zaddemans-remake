@@ -30,7 +30,7 @@ button_reset = Pin(10, Pin.IN, Pin.PULL_DOWN)
 
 # Interrupt handler
 def button_irq(pin):
-    #utime.sleep_ms(50)  # Debounce delay
+    utime.sleep_ms(50)  # Debounce delay
     for pin_num, price in buttons.items():
         if button_pins[pin_num].value():  # Check which button is pressed
             print_total(update_total(price))
